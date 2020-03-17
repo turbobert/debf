@@ -8,7 +8,7 @@ Run
 
 and then for example:
 
-    pipenv run python debf.py README.txt
+    pipenv run python debf.py lookup README.txt
 
 It will show you something like...
 
@@ -27,5 +27,15 @@ It will show you something like...
     libcapnp-0.7.0 /usr/share/doc/libcapnp-0.7.0/README.txt
     libclang-common-6.0-dev /usr/lib/llvm-6.0/lib/clang/6.0.1/README.txt
     ...
+
+    pipenv run python debf.py url mc
+
+It will show you something like...
+
+    Retrieving information from packages.debian.org for package 'mc'...
+    curl 'http://ftp.de.debian.org/debian/pool/main/m/mc/mc_4.8.22-1_amd64.deb' > 'mc_4.8.22-1_amd64.deb'     # DOWNLOAD
+    ar -t 'mc_4.8.22-1_amd64.deb'      # LIST OUTER CONTAINER
+    ar -x 'mc_4.8.22-1_amd64.deb' data.tar.xz      # EXTRACT data.tar.xz
+    tar -tJvf data.tar.xz       # LIST CONTENTS data.tar.xz
 
 No explanation needed, is it?

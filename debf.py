@@ -23,22 +23,36 @@ def lines_trim_extract(lines, collect_after_first, collect_until_and_without_las
         result = [ x for x in result if not x.startswith(y) ]
     return result
 
-needle = sys.argv[1]
-x = requests.get('https://packages.debian.org/search?searchon=contents&keywords=%s&mode=exactfilename&suite=stable&arch=amd64' % needle)
-#print(x.text)
 
-lines = lines_trim_extract(x.text.split("\n"), "<table>", "</table>", [], ["<tr>", "</tr>", "<td>", "</td>"], ["<col", "</col", "<th", "<tr"])
-lines = "".join(lines).replace("</a><td", "</a>\n<td").replace(">", "<").split("\n")
 
-files = []
+if len(sys.argv) == 1:
+    print("lookup <FILENAME>       # will retrieve a list of packages and the matching path <PKGNAME> <SPACE> <PATH-WITH-FILENAME>")
+    print("url <PKGNAME>           # will retrieve a URL to download the actual package")
+    sys.exit(0)
 
-for line in lines:
-    cols = line.split("<")
-    filename = cols[2] + cols[4]
-    pkg = cols[9].replace('"', "").split("/")[-1]
-    #print("filename='%s'" % filename)
-    #print("package='%s'" % pkg)
-    files.append(pkg + " " + filename)
+if len(sys.argv) >= 3:
 
-for line in sorted(files):
-    print(line)
+    if sys.argv[1] == "lookup":
+        needle = sys.argv[2]
+        x = requests.get('https://packages.debian.org/search?searchon=contents&keywords=%s&mode=exactfilename&suite=stable&arch=amd64' % needle)
+        lines = lines_trim_extract(x.text.split("\n"), "<table>", "</table>", [], ["<tr>", "</tr>", "<td>", "</td>"], ["<col", "</col", "<th", "<tr"])
+        lines = "".join(lines).replace("</a><td", "</a>\n<td").replace(">", "<").split("\n")
+        files = []
+        for line in lines:
+            cols = line.split("<")
+            filename = cols[2] + cols[4]
+            pkg = cols[9].replace('"', "").split("/")[-1]
+            files.append(pkg + " " + filename)
+        for line in sorted(files):
+            print(line)
+    
+    if sys.argv[1] == "url":
+        needle = sys.argv[2]
+        print("Retrieving information from packages.debian.org for package '%s'..." % needle)
+        x = requests.get("https://packages.debian.org/%s/%s/%s/download" % ("stable", needle, "amd64"))
+        url = [ s for s in x.text.split("\n") if s.find("href=") >= 0 and s.find("ftp.de.debian.org") >= 0 ][0].split('"')[1]
+        filename = url.split("/")[-1]
+        print("curl '%s' > '%s'     # DOWNLOAD" % (url, filename))
+        print("ar -t '%s'      # LIST OUTER CONTAINER" % (filename))
+        print("ar -x '%s' data.tar.xz      # EXTRACT data.tar.xz" % (filename))
+        print("tar -tJvf data.tar.xz       # LIST CONTENTS data.tar.xz")
